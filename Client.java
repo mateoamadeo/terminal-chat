@@ -23,7 +23,7 @@ public class Client {
             System.out.println("Connected to server!");
             System.out.println("Type your messages (type 'exit' to quit):\n");
 
-            MessageReader reader = new MessageReader(in, "Server: ");
+            MessageReader reader = new MessageReader(in);
             reader.start();
 
             String userInput;

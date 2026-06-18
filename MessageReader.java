@@ -2,12 +2,10 @@ import java.io.BufferedReader;
 
 public class MessageReader extends Thread {
     private final BufferedReader in;
-    private final String prefix;
-    private volatile boolean running;
+    private boolean running;
 
-    public MessageReader(BufferedReader in, String prefix) {
+    public MessageReader(BufferedReader in) {
         this.in = in;
-        this.prefix = prefix;
         this.running = true;
     }
 
@@ -16,7 +14,7 @@ public class MessageReader extends Thread {
         try {
             String message;
             while (running && (message = in.readLine()) != null) {
-                System.out.println("\r" + prefix + message);
+                System.out.println(message);
                 System.out.print("> ");
                 if (message.equals("exit")) {
                     running = false;
