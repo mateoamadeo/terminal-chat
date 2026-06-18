@@ -7,14 +7,16 @@ import java.util.List;
 public class ClientHandler extends Thread {
     private final Socket socket;
     private final List<ClientHandler> clients;
+    private final DatabaseManager db;
     private PrintWriter out;
     private String clientName;
     private volatile boolean running;
 
-    public ClientHandler(Socket socket, List<ClientHandler> clients, int clientNumber) {
+    public ClientHandler(Socket socket, List<ClientHandler> clients, int clientNumber, DatabaseManager db) {
         this.socket = socket;
         this.clients = clients;
         this.clientName = "Client" + clientNumber;
+        this.db = db;
         this.running = true;
     }
 
@@ -26,6 +28,19 @@ public class ClientHandler extends Thread {
 
             out = new PrintWriter(socket.getOutputStream(), true);
 
+            // Add user to database
+            db.addUser(clientName);
+
+            // Send message history to new client
+            List<String> history = db.getRecentMessages(50);
+            if (!history.isEmpty()) {
+                sendMessage("--- Last 50 messages ---");
+                for (String msg : history) {
+                    sendMessage(msg);
+                }
+                sendMessage("--- End of history ---");
+            }
+
             broadcast(clientName + " joined the chat!", this);
             System.out.println(clientName + " connected from " + socket.getRemoteSocketAddress());
 
@@ -36,6 +51,10 @@ public class ClientHandler extends Thread {
                 }
 
                 System.out.println(clientName + ": " + message);
+
+                // Save message to database
+                db.saveMessage(clientName, message);
+
                 broadcast(clientName + ": " + message, this);
             }
 

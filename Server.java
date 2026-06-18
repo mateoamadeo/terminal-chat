@@ -10,9 +10,15 @@ public class Server {
     private static final List<ClientHandler> clients = new ArrayList<>();
     private static volatile boolean running = true;
     private static int clientCounter = 0;
+    private static DatabaseManager db;
 
     public static void main(String[] args) {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
+
+        // Initialize database
+        db = new DatabaseManager();
+        int msgCount = db.getMessageCount();
+        System.out.println("Loaded " + msgCount + " messages from history.\n");
 
         // Thread for accepting client connections
         Thread acceptThread = new Thread(() -> {
@@ -24,7 +30,7 @@ public class Server {
                 while (running) {
                     try {
                         Socket clientSocket = server.accept();
-                        ClientHandler handler = new ClientHandler(clientSocket, clients, ++clientCounter);
+                        ClientHandler handler = new ClientHandler(clientSocket, clients, ++clientCounter, db);
 
                         synchronized (clients) {
                             clients.add(handler);
@@ -58,7 +64,7 @@ public class Server {
                 }
 
                 if (!input.trim().isEmpty()) {
-                    broadcastFromServer("Server: " + input);
+                    broadcastFromServer("Server", input);
                 }
             }
 
@@ -70,6 +76,7 @@ public class Server {
             }
 
             acceptThread.join(2000);
+            db.close();
             System.out.println("Server stopped.");
 
         } catch (Exception e) {
@@ -78,11 +85,16 @@ public class Server {
         }
     }
 
-    private static void broadcastFromServer(String message) {
-        System.out.println(message);
+    private static void broadcastFromServer(String username, String message) {
+        String fullMessage = username + ": " + message;
+        System.out.println(fullMessage);
+
+        // Save to database
+        db.saveMessage(username, message);
+
         synchronized (clients) {
             for (ClientHandler client : clients) {
-                client.sendMessage(message);
+                client.sendMessage(fullMessage);
             }
         }
     }
