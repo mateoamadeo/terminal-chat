@@ -6,6 +6,7 @@ import java.net.Socket;
 
 public class Server {
     public static final int DEFAULT_PORT = 5000;
+
     public static void main(String[] args) {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
 
@@ -26,24 +27,26 @@ public class Server {
                  )) {
 
                 System.out.println("Client connected!");
+                System.out.println("Type your messages (type 'exit' to quit):\n");
 
-                String msg;
-                while ((msg = in.readLine()) != null) {
-                    System.out.println("Client: " + msg);
+                MessageReader reader = new MessageReader(in, "Client: ");
+                reader.start();
 
-                    if (msg.equals("exit")) {
+                String userInput;
+                while (reader.isRunning()) {
+                    System.out.print("> ");
+                    userInput = console.readLine();
+                    if (userInput == null) {
                         break;
                     }
-
-                    System.out.print("Server: ");
-                    String response = console.readLine();
-                    out.println(response);
-
-                    if (response.equals("exit")) {
+                    out.println(userInput);
+                    if (userInput.equals("exit")) {
+                        reader.stopReading();
                         break;
                     }
                 }
 
+                reader.join(1000);
                 System.out.println("Connection closed.");
             }
 

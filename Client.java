@@ -5,6 +5,7 @@ import java.net.Socket;
 
 public class Client {
     public static final int DEFAULT_PORT = 5000;
+
     public static void main(String[] args) {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
         try (Socket socket = new Socket("localhost", port);
@@ -20,31 +21,28 @@ public class Client {
              )) {
 
             System.out.println("Connected to server!");
+            System.out.println("Type your messages (type 'exit' to quit):\n");
+
+            MessageReader reader = new MessageReader(in, "Server: ");
+            reader.start();
 
             String userInput;
-            while (true) {
-                System.out.print("Client: ");
+            while (reader.isRunning()) {
+                System.out.print("> ");
                 userInput = console.readLine();
+                if (userInput == null) {
+                    break;
+                }
                 out.println(userInput);
-
                 if (userInput.equals("exit")) {
-                    break;
-                }
-
-                String response = in.readLine();
-                if (response == null) {
-                    System.out.println("Server disconnected.");
-                    break;
-                }
-
-                System.out.println("Server: " + response);
-
-                if (response.equals("exit")) {
+                    reader.stopReading();
                     break;
                 }
             }
 
+            reader.join(1000);
             System.out.println("Connection closed.");
+            socket.close();
 
         } catch (Exception e) {
             System.err.println("Client error: " + e.getMessage());
